@@ -1,10 +1,11 @@
 {
   "domain": "gsj_energia",
   "name": "GSJ Energia Heat Pump",
-  "version": "0.3.0",
-  "documentation": "https://github.com/TWOJ_LOGIN/gsj-energia-ha",
+  "version": "0.4.0",
+  "documentation": "https://github.com/marcobie/gsj-energia-ha",
   "requirements": [],
   "dependencies": [],
   "codeowners": ["@marcobie"],
-  "iot_class": "cloud_polling"
+  "iot_class": "cloud_polling",
+  "config_flow": true
 }
