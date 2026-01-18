@@ -1,6 +1,6 @@
 import aiohttp
 from http.cookies import SimpleCookie
-from urllib.parse import urljoin
+
 
 class GSJClient:
     def __init__(self, host, username, password, device_id):
@@ -9,18 +9,18 @@ class GSJClient:
         self._password = password
         self._device_id = device_id
         self._session = aiohttp.ClientSession()
-        self._cookies = {}
         self._csrf_token = None
 
     async def close(self):
         await self._session.close()
 
     async def login(self):
-        # Pobierz stronę logowania aby dostać XSRF-TOKEN
-        async with self._session.get(f"http://{self._host}/") as resp:
+        # 1. Pobierz stronę logowania, aby dostać XSRF-TOKEN
+        async with self._session.get(f"http://{self._host}/login") as resp:
             cookies = resp.cookies
-            if "XSRF-TOKEN" in cookies:
-                self._csrf_token = cookies["XSRF-TOKEN"].value
+            if "XSRF-TOKEN" not in cookies:
+                raise Exception("Nie znaleziono XSRF-TOKEN podczas pobierania /login")
+            self._csrf_token = cookies["XSRF-TOKEN"].value
 
         headers = {
             "X-CSRF-TOKEN": self._csrf_token,
@@ -33,6 +33,7 @@ class GSJClient:
             "password": self._password,
         }
 
+        # 2. Właściwe logowanie
         async with self._session.post(
             f"http://{self._host}/login",
             data=data,
@@ -40,15 +41,14 @@ class GSJClient:
             allow_redirects=False,
         ) as resp:
             if resp.status not in (200, 302):
-                raise Exception("Błąd logowania do GSJ Energia")
+                raise Exception(f"Błąd logowania, HTTP {resp.status}")
 
-        # Zapisz cookies sesji
-        self._cookies = self._session.cookie_jar.filter_cookies(f"http://{self._host}")
+        # 3. Sprawdź czy mamy sesję
+        cookies = self._session.cookie_jar.filter_cookies(f"http://{self._host}")
+        if "gsj_session" not in cookies:
+            raise Exception("Brak ciasteczka gsj_session – logowanie nieudane")
 
     async def set_value(self, key, value):
-        if not self._csrf_token:
-            await self.login()
-
         url = f"http://{self._host}/set-user-cache"
         params = {
             "deviceId": self._device_id,
@@ -63,7 +63,7 @@ class GSJClient:
 
         async with self._session.post(url, params=params, headers=headers) as resp:
             if resp.status != 200:
-                raise Exception(f"Błąd zapisu {key}={value}")
+                raise Exception(f"Błąd zapisu {key}={value}, HTTP {resp.status}")
 
     async def get_value(self, key):
         url = f"http://{self._host}/get-user-cache"
@@ -74,5 +74,5 @@ class GSJClient:
 
         async with self._session.get(url, params=params) as resp:
             if resp.status != 200:
-                raise Exception(f"Błąd odczytu {key}")
-            return await resp.text()
+                raise Exception(f"Błąd odczytu {key}, HTTP {resp.status}")
+            return (await resp.text()).strip()
