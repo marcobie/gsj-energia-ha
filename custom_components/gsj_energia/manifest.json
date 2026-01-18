@@ -5,6 +5,6 @@
   "documentation": "https://github.com/TWOJ_LOGIN/gsj-energia-ha",
   "requirements": [],
   "dependencies": [],
-  "codeowners": ["@TWOJ_LOGIN"],
+  "codeowners": ["@marcobie"],
   "iot_class": "cloud_polling"
 }
