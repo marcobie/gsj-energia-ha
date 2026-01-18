@@ -5,8 +5,8 @@ from homeassistant.const import UnitOfTemperature
 from .const import DOMAIN
 
 
-async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
-    data = hass.data[DOMAIN]
+async def async_setup_entry(hass, entry, async_add_entities):
+    data = hass.data[DOMAIN][entry.entry_id]
     coordinator = data["coordinator"]
     client = data["client"]
 
@@ -56,16 +56,16 @@ class GSJClimateCO(ClimateEntity):
         except Exception:
             return None
 
-    async def async_set_temperature(self, **kwargs):
+     async_set_temperature(self, **kwargs):
         temperature = kwargs.get("temperature")
         if temperature is not None:
             await self.client.set_value("GRZANIE_ZADANA", temperature)
             await self.coordinator.async_request_refresh()
 
-    async def async_set_hvac_mode(self, hvac_mode):
+     async_set_hvac_mode(self, hvac_mode):
         value = 1 if hvac_mode == HVACMode.HEAT else 0
         await self.client.set_value("CO_STATUS", value)
         await self.coordinator.async_request_refresh()
 
-    async def async_update(self):
+     async_update(self):
         await self.coordinator.async_request_refresh()
