@@ -1,5 +1,4 @@
 import aiohttp
-from http.cookies import SimpleCookie
 
 
 class GSJClient:
@@ -15,16 +14,17 @@ class GSJClient:
         await self._session.close()
 
     async def login(self):
-        # 1. Pobierz stronę logowania, aby dostać XSRF-TOKEN
-        async with self._session.get(f"http://{self._host}/login") as resp:
+        # 1. Wejście na stronę główną – serwer ustawia XSRF-TOKEN
+        async with self._session.get(f"http://{self._host}/") as resp:
             cookies = resp.cookies
             if "XSRF-TOKEN" not in cookies:
-                raise Exception("Nie znaleziono XSRF-TOKEN podczas pobierania /login")
+                raise Exception("Nie znaleziono XSRF-TOKEN po GET /")
             self._csrf_token = cookies["XSRF-TOKEN"].value
 
         headers = {
             "X-CSRF-TOKEN": self._csrf_token,
             "X-Requested-With": "XMLHttpRequest",
+            "Referer": f"http://{self._host}/",
         }
 
         data = {
@@ -33,7 +33,7 @@ class GSJClient:
             "password": self._password,
         }
 
-        # 2. Właściwe logowanie
+        # 2. Logowanie właściwe
         async with self._session.post(
             f"http://{self._host}/login",
             data=data,
@@ -43,7 +43,7 @@ class GSJClient:
             if resp.status not in (200, 302):
                 raise Exception(f"Błąd logowania, HTTP {resp.status}")
 
-        # 3. Sprawdź czy mamy sesję
+        # 3. Sprawdzenie czy sesja powstała
         cookies = self._session.cookie_jar.filter_cookies(f"http://{self._host}")
         if "gsj_session" not in cookies:
             raise Exception("Brak ciasteczka gsj_session – logowanie nieudane")
@@ -59,6 +59,7 @@ class GSJClient:
         headers = {
             "X-CSRF-TOKEN": self._csrf_token,
             "X-Requested-With": "XMLHttpRequest",
+            "Referer": f"http://{self._host}/",
         }
 
         async with self._session.post(url, params=params, headers=headers) as resp:
