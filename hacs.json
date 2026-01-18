@@ -1,0 +1,7 @@
+{
+  "name": "GSJ Energia",
+  "content_in_root": false,
+  "domain": "gsj_energia",
+  "iot_class": "Cloud Polling",
+  "country": ["PL"]
+}
