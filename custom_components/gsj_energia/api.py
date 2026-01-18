@@ -1,5 +1,6 @@
 import aiohttp
 from yarl import URL
+import urllib.parse
 
 
 class GSJClient:
@@ -17,29 +18,32 @@ class GSJClient:
     async def login(self):
         base = f"http://{self._host}"
 
-        # 1. Pobierz cookie CSRF z Sanctum
-        async with self._session.get(f"{base}/sanctum/csrf-cookie") as resp:
+        # 1. Pobierz XSRF-TOKEN dokładnie jak przeglądarka
+        async with self._session.get(base) as resp:
             cookies = self._session.cookie_jar.filter_cookies(URL(base))
             if "XSRF-TOKEN" not in cookies:
-                raise Exception("Brak XSRF-TOKEN z /sanctum/csrf-cookie")
+                raise Exception("Brak XSRF-TOKEN po GET /")
             self._csrf_token = cookies["XSRF-TOKEN"].value
 
+        token = urllib.parse.unquote(self._csrf_token)
+
         headers = {
-            "X-CSRF-TOKEN": self._csrf_token,
+            "Content-Type": "application/x-www-form-urlencoded",
+            "X-CSRF-TOKEN": token,
             "X-Requested-With": "XMLHttpRequest",
             "Referer": base,
         }
 
-        data = {
-            "_token": self._csrf_token,
+        body = urllib.parse.urlencode({
+            "_token": token,
             "username": self._username,
             "password": self._password,
-        }
+        })
 
-        # 2. Logowanie
+        # 2. POST /login jak formularz HTML
         async with self._session.post(
             f"{base}/login",
-            data=data,
+            data=body,
             headers=headers,
             allow_redirects=False,
         ) as resp:
@@ -49,7 +53,7 @@ class GSJClient:
         # 3. Sprawdzenie sesji
         cookies = self._session.cookie_jar.filter_cookies(URL(base))
         if "gsj_session" not in cookies:
-            raise Exception("Brak gsj_session po logowaniu")
+            raise Exception("Brak gsj_session – logowanie nieudane")
 
     async def set_value(self, key, value):
         url = f"http://{self._host}/set-user-cache"
