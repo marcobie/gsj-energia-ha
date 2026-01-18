@@ -8,33 +8,26 @@ class GSJClient:
         self._username = username
         self._password = password
         self._device_id = device_id
-        self._session = aiohttp.ClientSession()
         self._csrf_token = None
+        self._session = aiohttp.ClientSession(cookie_jar=aiohttp.CookieJar(unsafe=True))
 
     async def close(self):
         await self._session.close()
 
     async def login(self):
-        base_url = f"http://{self._host}"
+        base = f"http://{self._host}"
 
-        # 1. Pobierz stronę główną aby dostać XSRF-TOKEN
-        async with self._session.get(base_url) as resp:
-            cookies = resp.cookies
+        # 1. Pobierz cookie CSRF z Sanctum
+        async with self._session.get(f"{base}/sanctum/csrf-cookie") as resp:
+            cookies = self._session.cookie_jar.filter_cookies(URL(base))
             if "XSRF-TOKEN" not in cookies:
-                raise Exception("Brak XSRF-TOKEN po GET /")
-
+                raise Exception("Brak XSRF-TOKEN z /sanctum/csrf-cookie")
             self._csrf_token = cookies["XSRF-TOKEN"].value
-
-            # Wstawiamy cookie ręcznie do cookie_jar (ważne!)
-            self._session.cookie_jar.update_cookies(
-                {"XSRF-TOKEN": self._csrf_token},
-                response_url=URL(base_url),
-            )
 
         headers = {
             "X-CSRF-TOKEN": self._csrf_token,
             "X-Requested-With": "XMLHttpRequest",
-            "Referer": base_url,
+            "Referer": base,
         }
 
         data = {
@@ -43,9 +36,9 @@ class GSJClient:
             "password": self._password,
         }
 
-        # 2. Właściwe logowanie
+        # 2. Logowanie
         async with self._session.post(
-            f"{base_url}/login",
+            f"{base}/login",
             data=data,
             headers=headers,
             allow_redirects=False,
@@ -54,9 +47,9 @@ class GSJClient:
                 raise Exception(f"Błąd logowania, HTTP {resp.status}")
 
         # 3. Sprawdzenie sesji
-        cookies = self._session.cookie_jar.filter_cookies(URL(base_url))
+        cookies = self._session.cookie_jar.filter_cookies(URL(base))
         if "gsj_session" not in cookies:
-            raise Exception("Brak cookie gsj_session – logowanie nieudane")
+            raise Exception("Brak gsj_session po logowaniu")
 
     async def set_value(self, key, value):
         url = f"http://{self._host}/set-user-cache"
