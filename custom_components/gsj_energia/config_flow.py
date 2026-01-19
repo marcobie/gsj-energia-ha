@@ -10,7 +10,9 @@ from .const import (
     CONF_PORT,
     CONF_DEVICE_ID,
     CONF_SCAN_INTERVAL,
+    DEFAULT_HOST,
     DEFAULT_PORT,
+    DEFAULT_DEVICE_ID,
     DEFAULT_SCAN_INTERVAL,
 )
 
@@ -28,9 +30,9 @@ class GSJEnergiaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         schema = vol.Schema(
             {
-                vol.Required(CONF_HOST, default="localhost"): str,
+                vol.Required(CONF_HOST, default=DEFAULT_HOST): str,
                 vol.Required(CONF_PORT, default=DEFAULT_PORT): int,
-                vol.Required(CONF_DEVICE_ID, default=414): int,
+                vol.Required(CONF_DEVICE_ID, default=DEFAULT_DEVICE_ID): int,
                 vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): int,
             }
         )
