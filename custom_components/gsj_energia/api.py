@@ -1,9 +1,8 @@
 import aiohttp
-import asyncio
 from typing import Dict
 
 
-class GSJBrowserAPI:
+class GSJClient:
     def __init__(self, base_url: str = "http://localhost:8124"):
         self._base_url = base_url.rstrip("/")
         self._session: aiohttp.ClientSession | None = None
@@ -18,13 +17,13 @@ class GSJBrowserAPI:
             await self._session.close()
             self._session = None
 
-    async def get_sensors(self) -> Dict:
+    async def get_status(self) -> Dict:
         await self.async_init()
         url = f"{self._base_url}/sensors"
 
         async with self._session.get(url) as resp:
             if resp.status != 200:
-                raise Exception(f"Błąd odczytu danych z GSJ Browser API: HTTP {resp.status}")
+                raise Exception(f"Błąd odczytu z GSJ Browser API: HTTP {resp.status}")
             return await resp.json()
 
     async def set_value(self, key: str, value):
