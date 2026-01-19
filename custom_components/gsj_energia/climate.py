@@ -37,5 +37,5 @@ class GSJClimate(ClimateEntity):
     async def async_set_temperature(self, **kwargs):
         temperature = kwargs.get("temperature")
         if temperature is not None:
-            await self.coordinator.api.set_value("CO_ZADANA", temperature)
+            await self.coordinator.client.set_value("CO_ZADANA", temperature)
             await self.coordinator.async_request_refresh()
