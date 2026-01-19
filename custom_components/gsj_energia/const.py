@@ -1,17 +1,11 @@
 DOMAIN = "gsj_energia"
 
 CONF_HOST = "host"
-CONF_PORT = "port"
 CONF_USERNAME = "username"
 CONF_PASSWORD = "password"
 CONF_DEVICE_ID = "device_id"
+CONF_SCAN_INTERVAL = "scan_interval"
 
-DEFAULT_PORT = 8124
+DEFAULT_SCAN_INTERVAL = 60
 
-PLATFORMS = [
-    "sensor",
-    "binary_sensor",
-    "switch",
-    "number",
-    "climate",
-]
+PLATFORMS = ["sensor", "binary_sensor", "climate", "number", "switch"]
