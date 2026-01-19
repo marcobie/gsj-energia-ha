@@ -16,12 +16,10 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
 )
 
-class GSJEnergiaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
     async def async_step_user(self, user_input=None):
-        errors = {}
-
         if user_input is not None:
             return self.async_create_entry(
                 title="GSJ Energia",
@@ -40,16 +38,15 @@ class GSJEnergiaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="user",
             data_schema=schema,
-            errors=errors,
         )
 
     @staticmethod
     @callback
     def async_get_options_flow(config_entry):
-        return GSJEnergiaOptionsFlow(config_entry)
+        return OptionsFlowHandler(config_entry)
 
 
-class GSJEnergiaOptionsFlow(config_entries.OptionsFlow):
+class OptionsFlowHandler(config_entries.OptionsFlow):
     def __init__(self, config_entry):
         self.config_entry = config_entry
 
