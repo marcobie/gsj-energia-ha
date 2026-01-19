@@ -10,9 +10,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     host = entry.data["host"]
     port = entry.data["port"]
     device_id = entry.data["device_id"]
+    scan_interval = entry.data.get("scan_interval", 30)
 
     client = GSJClient(host, port, device_id)
-    coordinator = GSJEnergiaCoordinator(hass, client)
+    coordinator = GSJEnergiaCoordinator(hass, client, scan_interval)
 
     await coordinator.async_config_entry_first_refresh()
 
