@@ -1,35 +1,29 @@
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from .api import GSJClient
-from .coordinator import GSJDataUpdateCoordinator
 from .const import DOMAIN, PLATFORMS
+from .api import GSJClient
+from .coordinator import GSJEnergiaCoordinator
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    hass.data.setdefault(DOMAIN, {})
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
+    host = entry.data["host"]
+    port = entry.data["port"]
+    device_id = entry.data["device_id"]
 
-    # Adres add-onu Browser API (localhost z kontenera HA)
-    base_url = "http://localhost:8124"
-
-    client = GSJClient(base_url)
-    coordinator = GSJDataUpdateCoordinator(hass, client)
+    client = GSJClient(host, port, device_id)
+    coordinator = GSJEnergiaCoordinator(hass, client)
 
     await coordinator.async_config_entry_first_refresh()
 
-    hass.data[DOMAIN][entry.entry_id] = {
-        "client": client,
-        "coordinator": coordinator,
-    }
+    hass.data.setdefault(DOMAIN, {})
+    hass.data[DOMAIN][entry.entry_id] = coordinator
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-    if unload_ok:
-        data = hass.data[DOMAIN].pop(entry.entry_id)
-        await data["client"].async_close()
-    return unload_ok
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
+    await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    hass.data[DOMAIN].pop(entry.entry_id)
+    return True
